@@ -5,7 +5,7 @@ authors = ["Dominic Burkart <dominicburkart@gmail.com>"]
 license = "MIT"
 description = "Macro for allocating closures to the heap."
 repository = "https://github.com/DominicBurkart/funfun"
-categories = ["macro", "functional", "memory-management"]
+categories = ["memory-management"]
 keywords = ["macro", "functional"]
 
 [badges]
