@@ -1,9 +1,8 @@
 use std::sync::Arc;
-use std::marker::PhantomData;
 
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq, Ord, PartialOrd)]
-struct HeapFn<T>{
+pub struct HeapFn<T>{
     f: Arc<Box<T>>
 }
 
@@ -42,12 +41,17 @@ mod tests {
 
     #[test]
     fn one_arity_heap_fn() {
-        let wrapped_prim = |i: u32| {println!("{}", i + 10)};
-        let wrapped_vec = |v: Vec<&str>| { println!("{:?}", v) };
-
         heap_fn!(|a: &str|{println!("{}", a)}).c()("Awesome!");
         heap_fn!(|i: u32| {println!("{}", i + 10)}).c()(10);
         heap_fn!(|v: Vec<&str>| { println!("{:?}", v) }).c()(vec!["nice", "cool"]);
     }
 
+    #[test]
+    fn pass_let_exp(){
+        let wrapped_prim = |i: u32| {println!("{}", i + 10)};
+        let wrapped_vec = |v: Vec<&str>| { println!("{:?}", v) };
+
+        heap_fn!(wrapped_prim).c()(10);
+        heap_fn!(wrapped_vec).c()(vec!["nice", "cool"])
+    }
 }
