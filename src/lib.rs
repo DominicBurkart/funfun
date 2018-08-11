@@ -10,16 +10,16 @@ struct HeapFn<T, A, B> where T: Fn(A) -> B {
 }
 
 impl<T, A, B> HeapFn<T, A, B>  where T: Fn(A) -> B {
-    pub fn new(b: Box<T>) -> Self {
+    pub fn new(arc: Box<T>) -> Self {
         HeapFn {
-            arc: Arc::new(b),
+            arc: Arc::new(arc),
             a: PhantomData,
             b: PhantomData
         }
     }
 
-    pub fn f(&self, v: A) -> B {
-        (self.f)(v)
+    pub fn f(&self) -> & Fn(A) -> B {
+        self.arc
     }
 }
 
