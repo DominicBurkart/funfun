@@ -1,0 +1,7 @@
+[package]
+name = "funfun"
+version = "0.1.0"
+authors = ["Dominic Burkart <dominicburkart@gmail.com>"]
+
+[lib]
+[dependencies]
