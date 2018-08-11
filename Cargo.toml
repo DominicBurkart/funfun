@@ -2,6 +2,14 @@
 name = "funfun"
 version = "0.1.0"
 authors = ["Dominic Burkart <dominicburkart@gmail.com>"]
+license = "MIT"
+description = "Macro for allocating closures to the heap."
+repository = "https://github.com/DominicBurkart/funfun"
+categories = ["macro", "functional", "memory-management"]
+keywords = ["macro", "functional"]
+
+[badges]
+travis-ci = { repository = "DominicBurkart/funfun" }
 
 [lib]
 [dependencies]
