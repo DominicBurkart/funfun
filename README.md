@@ -1,7 +1,7 @@
 # funfun
 
 [![Build Status](https://travis-ci.org/DominicBurkart/funfun.svg?branch=master)](https://travis-ci.org/DominicBurkart/funfun)
-[![Coveralls Coverage Status](https://coveralls.io/repos/github/DominicBurkart/kid/badge.svg)](https://coveralls.io/github/DominicBurkart/funfun)
+[![Coverage Status](https://coveralls.io/repos/github/DominicBurkart/funfun/badge.svg?branch=master)](https://coveralls.io/github/DominicBurkart/funfun?branch=master)
 [![Codecov Coverage Status](https://codecov.io/gh/DominicBurkart/funfun/branch/master/graphs/badge.svg)](https://codecov.io/gh/DominicBurkart/funfun)
 [![Crates.io](https://img.shields.io/crates/v/funfun.svg)](https://crates.io/crates/funfun)
 
