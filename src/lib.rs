@@ -3,17 +3,45 @@ use std::marker::PhantomData;
 
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq, Ord, PartialOrd)]
-struct HeapFn<T>{
-    f: Arc<Box<T>>
+struct HeapFn<T, A, B> where T: Fn(A) -> B {
+    arc: Arc<Box<T>>,
+    a: PhantomData<A>,
+    b: PhantomData<B>
 }
 
-impl<T> HeapFn<T> {
+impl<T, A, B> HeapFn<T, A, B>  where T: Fn(A) -> B {
     pub fn new(b: Box<T>) -> Self {
         HeapFn {
-            f: Arc::new(b),
+            arc: Arc::new(b),
+            a: PhantomData,
+            b: PhantomData
         }
     }
+
+    pub fn f(&self, v: A) -> B {
+        (self.f)(v)
+    }
 }
+
+//impl<T> Fn<()> for HeapFn<T> {
+//    extern "rust-call" fn call(&self, _args: ()) {
+//        println!("Call (Fn) for Foo");
+//    }
+//}
+
+//impl FnMut<()> for HeapFn {
+//    extern "rust-call" fn call_mut(&mut self, _args: ()) {
+//        println!("Call (FnMut) for Foo");
+//    }
+//}
+//
+//impl FnOnce<()> for HeapFn {
+//    type Output = ();
+//
+//    extern "rust-call" fn call_once(self, _args: ()) {
+//        println!("Call (FnOnce) for Foo");
+//    }
+//}
 
 #[macro_export]
 macro_rules! heap_fn {
@@ -29,9 +57,9 @@ mod tests {
         let wrapped_prim = |i: u32| {println!("{}", i + 10)};
         let wrapped_vec = |v: Vec<&str>| { println!("{:?}", v) };
 
-        (heap_fn!(||{println!("Neat!")}).f)();
-        (heap_fn!(||{wrapped_prim(10)}).f)();
-        (heap_fn!(||{wrapped_vec(vec!["nice", "cool"])}).f)();
+        heap_fn!(||{println!("Neat!")}).f();
+//        (heap_fn!(||{wrapped_prim(10)}).f)();
+//        (heap_fn!(||{wrapped_vec(vec!["nice", "cool"])}).f)();
     }
 
 }
