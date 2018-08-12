@@ -1,6 +1,6 @@
 [package]
 name = "funfun"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Dominic Burkart <dominicburkart@gmail.com>"]
 license = "MIT"
 description = "Macro for allocating closures to the heap."
