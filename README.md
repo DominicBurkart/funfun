@@ -6,9 +6,21 @@
 [![Crates.io](https://img.shields.io/crates/v/funfun.svg)](https://crates.io/crates/funfun)
 
 ### heap_fn!
-macro for allocating closures to the heap. Heap-allocated closures can
-be convenient when (re)assigning closures to structure fields, though
-heap allocation comes at the expense of inline optimization.
+```heap_fn!``` allocates a given closure to the heap, returning an
+asynchronous reference to it. Heap-allocated closures can be convenient
+when (re)assigning closures to structure fields, though heap allocation
+comes at the expense of closure inline optimization. I don't see a use
+for hiding a function behind an Arc in the heap, but the macro also
+works with ```fn``` objects.
+
+Notes:
+- Closures were boxed in earlier versions of Rust, but the advantages
+of inline optimization on performance drove the development of inline
+closures.
+- In this implementation, the closure is stored on the heap as long as
+it is being referenced. The closure's space in memory is released as
+soon as the last reference to it (including clones and across all
+threads) is destroyed.
 
  Usage:
 ```rust
@@ -18,10 +30,12 @@ let closure = heap_fn!(
     }
 );
 
-closure.c()(); // "This closure lives in the heap now!"
+closure(); // "This closure lives in the heap now!"
 
 let closure_identifier = || {println!("Named closure!")};
 
-heap_fn!(closure_identifier).c()(); // "Named closure!"
+heap_fn!(closure_identifier)(); // "Named closure!"
+
+Struct
 
 ```
