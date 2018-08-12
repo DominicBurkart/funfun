@@ -14,6 +14,11 @@ for hiding a function behind an Arc in the heap, but the macro also
 works with ```fn``` objects.
 
 Notes:
+- A HeapFn type is an Arc pointing towards a boxed value (e.g. a
+closure). In many instances where you need a heap-allocated closure,
+just boxing it (without worrying about asynchronous reference
+management) is enough. Make sure that you actually want the overhead of
+asynchronous pointers before you use the heap_fn macro!
 - Closures were boxed in earlier versions of Rust, but the advantages
 of inline optimization on performance drove the development of inline
 closures.
@@ -36,6 +41,25 @@ let closure_identifier = || {println!("Named closure!")};
 
 heap_fn!(closure_identifier)(); // "Named closure!"
 
-Struct
+
+// example use in structs:
+
+type T = HeapFn<Fn(&str) -> String>;
+
+struct F {
+    c: T
+}
+
+let c: T = heap_fn!(|s: &str| -> String {s.to_string()});
+
+let mut f = F { c };
+
+f.c = heap_fn!(
+    |d: &str| -> String {"reassign once".to_string()}
+);
+
+f.c = heap_fn!(
+    |d: &str| -> String {"and again".to_string()}
+)
 
 ```
