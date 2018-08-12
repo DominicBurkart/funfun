@@ -94,7 +94,7 @@ mod tests {
         let eg = box_fn!(|x: i32| -> i32 {x + 2});
 
         let mut v1 = Vec::new();
-        for i in 0..10000 {
+        for i in 0..1000 {
             let cl = eg.clone();
             v1.push(thread::spawn(move ||{cl(i)})); // move is necessary
             //v2.push(spawn_fn!(eg, i));
