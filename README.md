@@ -19,19 +19,14 @@ returns the thread's hook.
 // use of boxed functions in structs
 
 type T = BoxFn<Fn(&str) -> String>;
-
 struct F {
     c: T
 }
-
 let c: T = box_fn!(|s: &str| -> String {s.to_string()});
-
 let mut f = F { c };
-
 f.c = box_fn!(
     |d: &str| -> String {"reassign once".to_string()}
 );
-
 f.c = box_fn!(
     |_: &str| {"and again".to_string()}
 );
