@@ -13,8 +13,6 @@ macro_rules! heap_fn {
 mod tests {
     use HeapFn;
 
-    fn func(s: &str) { println!("{}", s)}
-
     #[test]
     fn zero_arity_heap_fn() {
         let wrapped_prim = |i: u32| { println!("{}", i + 10) };
@@ -46,6 +44,29 @@ mod tests {
 
     #[test]
     fn pass_function_heap_fn() {
+        fn func(s: &str) { println!("{}", s)}
+
         heap_fn!(func)("Wow!");
+    }
+
+    #[test]
+    fn in_struct_heap_fn() {
+        type T = HeapFn<Fn(&str) -> String>;
+
+        struct F {
+            c: T
+        }
+
+        let c: T = heap_fn!(|s: &str| -> String {s.to_string()});
+
+        let mut f = F { c };
+
+        f.c = heap_fn!(
+            |d: &str| -> String {"reassign once".to_string()}
+        );
+
+        f.c = heap_fn!(
+            |d: &str| -> String {"and again".to_string()}
+        )
     }
 }
