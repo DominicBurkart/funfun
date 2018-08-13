@@ -30,7 +30,7 @@ for res in v1.into_iter() {
 ```
 
 ### box_fn!
-```box_fn!``` Boxes a closure.
+```box_fn!``` Boxes a closure and returns an Rc pointer.
 ```rust
 type T = BoxFn<Fn(&str) -> String>;
 struct F {
@@ -42,6 +42,25 @@ f.c = box_fn!(
     |d: &str| -> String {"reassign once".to_string()}
 );
 f.c = box_fn!(
+    |_: &str| {"and again".to_string()}
+);
+```
+
+### arc_fn!
+```box_fn!``` Boxes a closure and returns an Arc pointer. Slower than
+an Rc pointer, but allows derivation of traits like Clone.
+```rust
+type T = ArcFn<Fn(&str) -> String>;
+#[derive(Clone)]
+struct F {
+    c: T
+}
+let c: T = arc_fn!(|s: &str| -> String {s.to_string()});
+let mut f = F { c };
+f.c = arc_fn!(
+    |d: &str| -> String {"reassign once".to_string()}
+);
+f.c = arc_fn!(
     |_: &str| {"and again".to_string()}
 );
 ```

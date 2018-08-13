@@ -1,3 +1,6 @@
+use std::sync::Arc;
+use std::fmt;
+
 /// Boxes (heap-allocates) the given value and returns an Rc to the object.
 #[macro_export]
 macro_rules! rc {
@@ -8,8 +11,8 @@ macro_rules! rc {
 /// Boxes (heap-allocates) the given value and returns an Arc to the object.
 #[macro_export]
 macro_rules! arc {
-    ( $f:ident ) => { ::std::Arc::new(Box::new($f)) };
-    ( $f:expr ) => { ::std::Arc::new(Box::new($f)) };
+    ( $f:ident ) => { ::std::sync::Arc::new(Box::new($f)) };
+    ( $f:expr ) => { ::std::sync::Arc::new(Box::new($f)) };
 }
 
 /// Boxes a closure and returns a reference.
@@ -17,6 +20,14 @@ macro_rules! arc {
 macro_rules! box_fn {
     ( $f:ident ) => { rc!($f) };
     ( $f:expr ) => { rc!($f) };
+}
+
+/// Boxes a closure and returns an Arc reference. Slower than just a box, but can derive traits like
+/// Clone.
+#[macro_export]
+macro_rules! arc_fn {
+    ( $f:ident ) => { arc!($f) };
+    ( $f:expr ) => { arc!($f) };
 }
 
 /// Starts a new thread and runs the passed closure with the passed arguments in it, returning the
@@ -28,9 +39,13 @@ macro_rules! spawn_fn {
     ( $f:expr, $( $arg:expr ),* ) => { ::std::thread::spawn(move || {$f($($arg),*)}) };
 }
 
-/// Boxed<T> alias used for clarity (and later trait implementation) when boxing structures that
+/// Box<T> alias used for clarity (and later trait implementation) when boxing structures that
 /// implement Fn* traits.
 pub type BoxFn<T> = Box<T>;
+
+/// Arc<Box<T>> alias used for clarity (and later trait implementation) when boxing structures that
+/// implement Fn* traits.
+pub type ArcFn<T> = Arc<Box<T>>;
 
 #[cfg(test)]
 mod tests {
@@ -90,6 +105,29 @@ mod tests {
         );
 
         f.c = box_fn!(
+            |_: &str| {"and again".to_string()}
+        );
+    }
+
+
+    #[test]
+    fn in_struct_arc_fn() {
+        type T = ArcFn<Fn(&str) -> String>;
+
+        #[derive(Clone)]
+        struct F {
+            c: T
+        }
+
+        let c: T = arc_fn!(|s: &str| -> String {s.to_string()});
+
+        let mut f = F { c };
+
+        f.c = arc_fn!(
+            |d: &str| -> String {"reassign once".to_string()}
+        );
+
+        f.c = arc_fn!(
             |_: &str| {"and again".to_string()}
         );
     }
