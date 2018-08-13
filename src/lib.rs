@@ -11,8 +11,8 @@ macro_rules! rc {
 /// Boxes (heap-allocates) the given value and returns an Arc to the object.
 #[macro_export]
 macro_rules! arc {
-    ( $f:ident ) => { ::std::sync::Arc::new(Box::new($f)) };
-    ( $f:expr ) => { ::std::sync::Arc::new(Box::new($f)) };
+    ( $f:ident ) => { ::std::sync::Arc::new($f) };
+    ( $f:expr ) => { ::std::sync::Arc::new($f) };
 }
 
 /// Boxes a closure and returns a reference.
@@ -43,9 +43,15 @@ macro_rules! spawn_fn {
 /// implement Fn* traits.
 pub type BoxFn<T> = Box<T>;
 
-/// Arc<Box<T>> alias used for clarity (and later trait implementation) when boxing structures that
+/// Arc<T> alias used for clarity (and later trait implementation) when boxing structures that
 /// implement Fn* traits.
-pub type ArcFn<T> = Arc<Box<T>>;
+pub type ArcFn<T> = Arc<T>;
+
+impl<T> fmt::Debug for ArcFn<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{{Arc<Box<{}>>>}}", T)
+    }
+}
 
 #[cfg(test)]
 mod tests {
