@@ -10,30 +10,7 @@
 closure or function with the passed arguments in a new thread, and
 returns the thread's hook.
 
-### box_fn!
-```box_fn!``` Boxes a closure.
-
- Usage:
-```rust
-
-// use of boxed functions in structs
-
-type T = BoxFn<Fn(&str) -> String>;
-struct F {
-    c: T
-}
-let c: T = box_fn!(|s: &str| -> String {s.to_string()});
-let mut f = F { c };
-f.c = box_fn!(
-    |d: &str| -> String {"reassign once".to_string()}
-);
-f.c = box_fn!(
-    |_: &str| {"and again".to_string()}
-);
-
-
-// multithreading with spawn_fn!
-
+``` rust
 let eg = box_fn!(|x: i32| -> i32 {x + 2});
 let also = box_fn!(|x: i32, y: i32| -> i32 {x + y});
 
@@ -48,4 +25,21 @@ v1.push(spawn_fn!(||{println!("accepts closures to run in their own thread!"); 1
 for res in v1.into_iter() {
     res.join();
 }
+```
+
+### box_fn!
+```box_fn!``` Boxes a closure.
+```rust
+type T = BoxFn<Fn(&str) -> String>;
+struct F {
+    c: T
+}
+let c: T = box_fn!(|s: &str| -> String {s.to_string()});
+let mut f = F { c };
+f.c = box_fn!(
+    |d: &str| -> String {"reassign once".to_string()}
+);
+f.c = box_fn!(
+    |_: &str| {"and again".to_string()}
+);
 ```
