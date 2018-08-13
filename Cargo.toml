@@ -1,6 +1,6 @@
 [package]
 name = "funfun"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["Dominic Burkart <dominicburkart@gmail.com>"]
 license = "MIT"
 description = "Macros for working with closures."
