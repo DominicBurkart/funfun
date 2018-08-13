@@ -18,16 +18,16 @@ macro_rules! arc {
 /// Boxes a closure and returns a reference.
 #[macro_export]
 macro_rules! box_fn {
-    ( $f:ident ) => { rc!($f) };
-    ( $f:expr ) => { rc!($f) };
+    ( $f:ident ) => { $crate::BoxFn::new($f) };
+    ( $f:expr ) => { $crate::BoxFn::new($f) };
 }
 
 /// Boxes a closure and returns an Arc reference. Slower than just a box, but can derive traits like
 /// Clone.
 #[macro_export]
 macro_rules! arc_fn {
-    ( $f:ident ) => { arc!($f) };
-    ( $f:expr ) => { arc!($f) };
+    ( $f:ident ) => { $crate::ArcFn::new($f) };
+    ( $f:expr ) => { $crate::ArcFn::new($f) };
 }
 
 /// Starts a new thread and runs the passed closure with the passed arguments in it, returning the
