@@ -47,7 +47,7 @@ f.c = box_fn!(
 ```
 
 ### arc_fn!
-```box_fn!``` Boxes a closure and returns an Arc pointer. Slower than
+```arc_fn!``` Boxes a closure and returns an Arc pointer. Slower than
 an Rc pointer, but allows derivation of traits like Clone.
 ```rust
 type T = ArcFn<Fn(&str) -> String>;
