@@ -1,6 +1,3 @@
-use std::sync::Arc;
-use std::thread;
-
 /// Boxes (heap-allocates) the given value and returns an Rc to the object.
 #[macro_export]
 macro_rules! rc {
@@ -11,8 +8,8 @@ macro_rules! rc {
 /// Boxes (heap-allocates) the given value and returns an Arc to the object.
 #[macro_export]
 macro_rules! arc {
-    ( $f:ident ) => { $crate::Arc::new(Box::new($f)) };
-    ( $f:expr ) => { $crate::Arc::new(Box::new($f)) };
+    ( $f:ident ) => { ::std::Arc::new(Box::new($f)) };
+    ( $f:expr ) => { ::std::Arc::new(Box::new($f)) };
 }
 
 /// Boxes a closure and returns a reference.
@@ -26,9 +23,9 @@ macro_rules! box_fn {
 /// new thread's hook.
 #[macro_export]
 macro_rules! spawn_fn {
-    ( $f:expr ) => { $crate::thread::spawn($f)};
-    ( $f:ident, $( $arg:ident ),* ) => { {let v = $f.clone(); $crate::thread::spawn(move || {v($($arg),*)})}};
-    ( $f:expr, $( $arg:expr ),* ) => { $crate::thread::spawn(move || {$f($($arg),*)}) };
+    ( $f:expr ) => { ::std::thread::spawn($f)};
+    ( $f:ident, $( $arg:ident ),* ) => { {let v = $f.clone(); ::std::thread::spawn(move || {v($($arg),*)})}};
+    ( $f:expr, $( $arg:expr ),* ) => { ::std::thread::spawn(move || {$f($($arg),*)}) };
 }
 
 /// Boxed<T> alias used for clarity (and later trait implementation) when boxing structures that
@@ -37,6 +34,7 @@ pub type BoxFn<T> = Box<T>;
 
 #[cfg(test)]
 mod tests {
+    use std::thread;
     use super::*;
 
     #[test]
