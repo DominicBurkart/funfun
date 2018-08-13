@@ -1,14 +1,14 @@
 use std::sync::Arc;
 use std::thread;
 
-/// Boxes (heap-allocates) the given value and returns an RC to the object.
+/// Boxes (heap-allocates) the given value and returns an Rc to the object.
 #[macro_export]
 macro_rules! rc {
     ( $f:ident ) => { Box::new($f) };
     ( $f:expr ) => { Box::new($f) };
 }
 
-/// Boxes (heap-allocates) the given value and returns an ARC to the object.
+/// Boxes (heap-allocates) the given value and returns an Arc to the object.
 #[macro_export]
 macro_rules! arc {
     ( $f:ident ) => { $crate::Arc::new(Box::new($f)) };
