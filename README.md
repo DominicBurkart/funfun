@@ -4,6 +4,8 @@
 [![Coverage Status](https://coveralls.io/repos/github/DominicBurkart/funfun/badge.svg?branch=master)](https://coveralls.io/github/DominicBurkart/funfun?branch=master)
 [![Codecov Coverage Status](https://codecov.io/gh/DominicBurkart/funfun/branch/master/graphs/badge.svg)](https://codecov.io/gh/DominicBurkart/funfun)
 [![Crates.io](https://img.shields.io/crates/v/funfun.svg)](https://crates.io/crates/funfun)
+[![Rust Documentation](https://docs.rs/funfun/badge.svg)](https://docs.rs/funfun)
+
 
 ### spawn_fn!
 ```spawn_fn!``` Takes a closure or function and its arguments, runs the
