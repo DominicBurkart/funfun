@@ -13,3 +13,4 @@ travis-ci = { repository = "DominicBurkart/funfun" }
 
 [lib]
 [dependencies]
+cute = "0.3.0"

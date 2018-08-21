@@ -1,3 +1,6 @@
+#[macro_use(c)]
+extern crate cute;
+
 use std::sync::Arc;
 //use std::fmt;
 
@@ -81,6 +84,17 @@ macro_rules! spawn_fn {
     ( $f:expr, $( $arg:expr ),* ) => { ::std::thread::spawn(move || {$f($($arg),*)}) };
 }
 
+macro_rules! tup {
+    ($iter:ident) => {unimplemented!()}
+}
+
+macro_rules! call {
+    ( $f:ident, ($( $arg:ident ),*) ) => {$f($($arg),*)};
+    ( $f:ident, ($( $arg:expr ),*) ) => {$f($($arg),*)};
+    ( $f:ident, $args:ident ) => {$crate::call!($f, $crate::tup!($args))};
+}
+
+
 /// Box<T> aliased for clarity (and later trait implementation) when boxing structures that
 /// implement Fn* traits.
 pub type BoxFn<T> = Box<T>;
@@ -91,6 +105,8 @@ pub type ArcFn<T> = Arc<T>;
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
+    use std::iter::FromIterator;
     use std::thread;
     use super::*;
 
@@ -125,7 +141,7 @@ mod tests {
 
     #[test]
     fn pass_function_box_fn() {
-        fn func(s: &str) { println!("{}", s)}
+        fn func(s: &str) { println!("{}", s) }
 
         box_fn!(func)("Wow!");
     }
@@ -168,12 +184,12 @@ mod tests {
     fn multithreading_box_fn() {
         let eg = box_fn!(|x: i32| -> i32 {x + 2});
         let mut v1 = Vec::new();
-        for i in 0..1000 {
+        for i in 0..100 {
             let cl = eg.clone();
-            v1.push(thread::spawn(move ||{cl(i)}));
+            v1.push(thread::spawn(move || { cl(i) }));
         }
         for res in v1.into_iter() {
-            res.join();
+            res.join().unwrap();
         }
     }
 
@@ -190,6 +206,23 @@ mod tests {
         v1.push(spawn_fn!(||{println!("accepts closures to run in their own thread!"); 1}));
         for res in v1.into_iter() {
             res.join();
+    #[test]
+    fn test_tuple_call() {
+        fn lgbt(l: &str, g: &str, b: &str, t: &str) -> bool {
+            println!("LGBT stands for: {} {} {} {}", l, g, b, t);
+            true
         }
+        assert!(call!(lgbt, ("let's", "go", "beach", "to the")));
+        let g = "go";
+        assert!(call!(lgbt, ("let's", g, "beach", "to the")));
+    }
+
+    #[test]
+    fn test_vec_call() {
+        fn lgbt(l: &str, g: &str, b: &str, t: &str) -> bool {
+            println!("LGBT stands for: {} {} {} {}", l, g, b, t);
+            true
+        }
+        assert!(call!())
     }
 }
