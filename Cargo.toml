@@ -1,7 +1,15 @@
 [package]
 name = "funfun"
-version = "0.1.0"
+version = "0.2.4"
 authors = ["Dominic Burkart <dominicburkart@gmail.com>"]
+license = "MIT"
+description = "Macros for working with closures."
+repository = "https://github.com/DominicBurkart/funfun"
+categories = ["memory-management"]
+keywords = ["macro", "functional"]
+
+[badges]
+travis-ci = { repository = "DominicBurkart/funfun" }
 
 [lib]
 [dependencies]
