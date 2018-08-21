@@ -196,16 +196,20 @@ mod tests {
     #[test]
     fn multithreading_spawn_fn() {
         let eg = box_fn!(|x: i32| -> i32 {x + 2});
-        let also = box_fn!(|x: i32, y: i32| -> i32 {x + y});
+        let also = box_fn!(|x: i32, y: i32| -> i32 { 0 - (x + y)});
         let mut v1 = Vec::new();
-        for i1 in 0..10000 {
+        for i1 in 0..100 {
             let i2 = i1 + 10;
             v1.push(spawn_fn!(eg, i1));
             v1.push(spawn_fn!(also, i1, i2)); // woohoo multi-arity!
         }
-        v1.push(spawn_fn!(||{println!("accepts closures to run in their own thread!"); 1}));
-        for res in v1.into_iter() {
-            res.join();
+        v1.push(spawn_fn!(||{println!("accepts closures to run in their own thread!"); 0}));
+        let results: Vec<i32> = c![res.join().unwrap(), for res in v1.into_iter()];
+        let res_set: HashSet<i32> = HashSet::from_iter(results.clone());
+        assert_eq!(res_set.len(), results.len()); // no duplicates
+        assert_eq!(201, results.len()); // no missing values
+    }
+
     #[test]
     fn test_tuple_call() {
         fn lgbt(l: &str, g: &str, b: &str, t: &str) -> bool {
