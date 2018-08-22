@@ -1,3 +1,5 @@
+#![recursion_limit = "1800"]
+
 #[macro_use(c)]
 extern crate cute;
 
@@ -75,23 +77,70 @@ macro_rules! arc_fn {
     ( $f:expr ) => { $crate::ArcFn::new($f) };
 }
 
+#[macro_export]
+macro_rules! tup {
+    ($iter:ident) => {{
+        $iter.collect()
+    }};
+}
+
 /// Starts a new thread and runs the passed closure with the passed arguments in it, returning the
 /// new thread's hook.
 #[macro_export]
 macro_rules! spawn_fn {
     ( $f:expr ) => { ::std::thread::spawn($f)};
-    ( $f:ident, $( $arg:ident ),* ) => { {let v = $f.clone(); ::std::thread::spawn(move || {v($($arg),*)})}};
-    ( $f:expr, $( $arg:expr ),* ) => { ::std::thread::spawn(move || {$f($($arg),*)}) };
+    ( $f:ident, $( $arg:ident ),* ) => {{
+        let v = $f.clone();
+        ::std::thread::spawn(move || {v( $($arg),* )})
+    }};
+    ( $f:expr, $( $arg:expr ),* ) => { ::std::thread::spawn(move || {$f( $($arg),* )}) };
 }
 
-macro_rules! tup {
-    ($iter:ident) => {unimplemented!()}
+#[macro_export]
+macro_rules! _spew {
+    ($t:ident, $l0:ident, $l1:ident) => {{
+        if $l0 < $l1 - 1 {
+            let next = $l0 + 1;
+            return ($t.$l0, _spew!($t, next, $l1));
+        } else if $l0 == $l1 - 1 {
+            return $t.$l0;
+        }
+    }};
 }
 
+#[macro_export]
+macro_rules! spew {
+    ($f:ident, $t:ident, $l1:ident) => {{
+        let mut i = 0;
+        let mut lim = 3;
+        if $l1 > lim {
+            panic!("Recursion limit is set too low.");
+        } else {
+            $f(_spew!($t, i, $l1))
+        }
+    }};
+//    ($t:ident, $l0:ident, $l1:ident) => {{
+//        if $l0 == 0 {
+//            let next = 1;
+//            return ($t.$l0, spew!($t, next, $l1));
+//        } else if $l0 < $l1 - 1 {
+//            let next = $l0 + 1;
+//            return ($t.$l0, spew!($t, next, $l1));
+//        } else if $l0 == $l1 - 1 {
+//            return $t.$l0;
+//        }
+//    }};
+}
+
+#[macro_export]
 macro_rules! call {
     ( $f:ident, ($( $arg:ident ),*) ) => {$f($($arg),*)};
     ( $f:ident, ($( $arg:expr ),*) ) => {$f($($arg),*)};
-    ( $f:ident, $args:ident ) => {$crate::call!($f, $crate::tup!($args))};
+    ( $f:ident, $args:ident ) => {{
+        let l = $args.len();
+        let t = $args.into_iter().collect();
+        spew!($f, t, l)
+    }};
 }
 
 
@@ -218,7 +267,7 @@ mod tests {
         }
         assert!(call!(lgbt, ("let's", "go", "beach", "to the")));
         let g = "go";
-        assert!(call!(lgbt, ("let's", g, "beach", "to the")));
+        assert!(call!(lgbt, ("let's", g, "beach", "to the"))); // identifiers in tuple
     }
 
     #[test]
@@ -227,6 +276,7 @@ mod tests {
             println!("LGBT stands for: {} {} {} {}", l, g, b, t);
             true
         }
-        assert!(call!())
+        let v = vec!["let's", "go", "beach", "to the"];
+        assert!(call!(lgbt, v));
     }
 }
