@@ -1,5 +1,3 @@
-#![recursion_limit = "1800"]
-
 #[macro_use(c)]
 extern crate cute;
 
@@ -77,13 +75,6 @@ macro_rules! arc_fn {
     ( $f:expr ) => { $crate::ArcFn::new($f) };
 }
 
-#[macro_export]
-macro_rules! tup {
-    ($iter:ident) => {{
-        $iter.collect()
-    }};
-}
-
 /// Starts a new thread and runs the passed closure with the passed arguments in it, returning the
 /// new thread's hook.
 #[macro_export]
@@ -96,51 +87,35 @@ macro_rules! spawn_fn {
     ( $f:expr, $( $arg:expr ),* ) => { ::std::thread::spawn(move || {$f( $($arg),* )}) };
 }
 
-#[macro_export]
-macro_rules! _spew {
-    ($t:ident, $l0:ident, $l1:ident) => {{
-        if $l0 < $l1 - 1 {
-            let next = $l0 + 1;
-            return ($t.$l0, _spew!($t, next, $l1));
-        } else if $l0 == $l1 - 1 {
-            return $t.$l0;
+macro_rules! _recurse_vector {
+    (call!($($arg:ident),*), $iter:ident) => {{
+        let head = iter.next();
+        match head {
+            Some(v) => { _recurse_vector!(call!($($arg),*, v), $iter) },
+            None => { call!($($arg),*) },
         }
     }};
-}
-
-#[macro_export]
-macro_rules! spew {
-    ($f:ident, $t:ident, $l1:ident) => {{
-        let mut i = 0;
-        let mut lim = 3;
-        if $l1 > lim {
-            panic!("Recursion limit is set too low.");
-        } else {
-            $f(_spew!($t, i, $l1))
+    ($f:ident, $iter:ident) => {{
+        let head = iter.next();
+        match head {
+            Some(v) => {
+                _recurse_vector!(call!($f, v ), $iter)
+            },
+            None => {
+                call!($f, ())
+            }
         }
     }};
-//    ($t:ident, $l0:ident, $l1:ident) => {{
-//        if $l0 == 0 {
-//            let next = 1;
-//            return ($t.$l0, spew!($t, next, $l1));
-//        } else if $l0 < $l1 - 1 {
-//            let next = $l0 + 1;
-//            return ($t.$l0, spew!($t, next, $l1));
-//        } else if $l0 == $l1 - 1 {
-//            return $t.$l0;
-//        }
-//    }};
 }
 
 #[macro_export]
 macro_rules! call {
-    ( $f:ident, ($( $arg:ident ),*) ) => {$f($($arg),*)};
-    ( $f:ident, ($( $arg:expr ),*) ) => {$f($($arg),*)};
     ( $f:ident, $args:ident ) => {{
-        let l = $args.len();
-        let t = $args.into_iter().collect();
-        spew!($f, t, l)
-    }};
+            _recurse_vector!($f, $args)
+        }};
+//    ( $f:ident, ($( $arg:ident ),*) ) => {$f($($arg),*)};
+    ( $f:ident, ($( $arg:expr ),*) ) => {$f($($arg),*)};
+    ( $f:ident, $( $arg:expr ),* ) => {$f($($arg),*)};
 }
 
 
@@ -260,14 +235,37 @@ mod tests {
     }
 
     #[test]
-    fn test_tuple_call() {
+    fn test_paren_call() {
         fn lgbt(l: &str, g: &str, b: &str, t: &str) -> bool {
             println!("LGBT stands for: {} {} {} {}", l, g, b, t);
             true
         }
-        assert!(call!(lgbt, ("let's", "go", "beach", "to the")));
+        fn mixed(l: &str, g: &str, b: &str, t: i32) -> bool {
+            println!("Params: {} {} {} {}", l, g, b, t);
+            true
+        }
+        fn no_params() -> bool {
+            println!("nice");
+            true
+        }
+
+        assert!(call!(lgbt, ("let's", "go", "beach", "to the"))); // remember: this isn't actually
+                                                                  // a tuple. it's parsed by the
+                                                                  // macro before it can be tupled.
         let g = "go";
-        assert!(call!(lgbt, ("let's", g, "beach", "to the"))); // identifiers in tuple
+        assert!(call!(lgbt, ("let's", g, "beach", "to the"))); // identifiers work
+        assert!(call!(mixed, ("hungry", g, "hippo", 2))); // mixed types work
+        assert!(call!(no_params, ())) // no parameters
+    }
+
+    #[test]
+    fn test_no_paren_call() {
+        fn p(s1:&str, s2:&str) {
+            println!("{}", s1);
+            println!("{}", s2);
+        }
+        let n = "neato";
+        call!(p, n, "hello!")
     }
 
     #[test]
