@@ -11,48 +11,6 @@ macro_rules! rc {
     ( $f:expr ) => { Box::new($f) };
 }
 
-
-//#[derive(Debug, Clone, Hash, Eq, PartialEq, Ord, PartialOrd)]
-//struct HeapFn<T, A, B> where T: Fn(A) -> B {
-//    arc: Arc<Box<T>>,
-//    a: PhantomData<A>,
-//    b: PhantomData<B>
-//}
-//
-//impl<T, A, B> HeapFn<T, A, B>  where T: Fn(A) -> B {
-//    pub fn new(arc: Box<T>) -> Self {
-//        HeapFn {
-//            arc: Arc::new(arc),
-//            a: PhantomData,
-//            b: PhantomData
-//        }
-//    }
-//
-//    pub fn f(&self) -> & Fn(A) -> B {
-//        self.arc
-//    }
-//}
-
-//impl<T> Fn<()> for HeapFn<T> {
-//    extern "rust-call" fn call(&self, _args: ()) {
-//        println!("Call (Fn) for Foo");
-//    }
-//}
-
-//impl FnMut<()> for HeapFn {
-//    extern "rust-call" fn call_mut(&mut self, _args: ()) {
-//        println!("Call (FnMut) for Foo");
-//    }
-//}
-//
-//impl FnOnce<()> for HeapFn {
-//    type Output = ();
-//
-//    extern "rust-call" fn call_once(self, _args: ()) {
-//        println!("Call (FnOnce) for Foo");
-//    }
-//}
-
 /// Boxes (heap-allocates) the given value and returns an Arc to the object.
 #[macro_export]
 macro_rules! arc {
@@ -88,22 +46,11 @@ macro_rules! spawn_fn {
 }
 
 macro_rules! _recurse_vector {
-    (call!($($arg:ident),*), $iter:ident) => {{
-        let head = iter.next();
-        match head {
-            Some(v) => { _recurse_vector!(call!($($arg),*, v), $iter) },
-            None => { call!($($arg),*) },
-        }
-    }};
-    ($f:ident, $iter:ident) => {{
-        let head = iter.next();
-        match head {
-            Some(v) => {
-                _recurse_vector!(call!($f, v ), $iter)
-            },
-            None => {
-                call!($f, ())
-            }
+    ( call!($($arg:ident),* ), $iter:ident ) => {{
+        let next = iter.next();
+        match next {
+            Some(v) => { _recurse_vector!( call!($($arg), *, v), $iter) },
+            None => { call!($($arg), *) },
         }
     }};
 }
@@ -111,11 +58,20 @@ macro_rules! _recurse_vector {
 #[macro_export]
 macro_rules! call {
     ( $f:ident, $args:ident ) => {{
-            _recurse_vector!($f, $args)
-        }};
-//    ( $f:ident, ($( $arg:ident ),*) ) => {$f($($arg),*)};
+        let iter = args.into_iter();
+        let head = iter.next();
+        match head {
+            Some(v) => {
+                _recurse_vector!(call!($f, v ), iter)
+            },
+            None => {
+                call!($f, ())
+            }
+        }
+    }};
     ( $f:ident, ($( $arg:expr ),*) ) => {$f($($arg),*)};
     ( $f:ident, $( $arg:expr ),* ) => {$f($($arg),*)};
+    ( $f:ident, () ) => {$f()};
 }
 
 
@@ -129,6 +85,7 @@ pub type ArcFn<T> = Arc<T>;
 
 #[cfg(test)]
 mod tests {
+
     use std::collections::HashSet;
     use std::iter::FromIterator;
     use std::thread;
