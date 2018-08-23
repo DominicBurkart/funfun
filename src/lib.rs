@@ -1,3 +1,5 @@
+#![recursion_limit="512"]
+
 #[macro_use(c)]
 extern crate cute;
 
@@ -46,30 +48,63 @@ macro_rules! spawn_fn {
 }
 
 macro_rules! _recurse_vector {
-    ( call!($($arg:ident),* ), $v:ident, $i:expr ) => {{
-        assert!($v.len() < 20 );
-        if $i < $v.len() {
-            let next = $v.get($i).unwrap();
-            let nexti = $i + 1;
-            _recurse_vector!( call!($($arg), *, next), $v, nexti)
-        } else {
-            call!($($arg), *)
+    ( call!($($arg:ident),* ), $v:ident, 0 ) => {{
+        let next = $v.next();
+        match next {
+            Some(v) => _recurse_vector!( call!($($arg), *, next), $v, 1 ),
+            None => call!($($arg), *)
+        }
+    }};
+    ( call!($($arg:ident),* ), $v:ident, 1 ) => {{
+        let next = $v.next();
+        match next {
+            Some(v) => _recurse_vector!( call!($($arg), *, next), $v, 2 ),
+            None => call!($($arg), *)
+        }
+    }};
+    ( call!($($arg:ident),* ), $v:ident, 2 ) => {{
+        let next = $v.next();
+        match next {
+            Some(v) => _recurse_vector!( call!($($arg), *, next), $v, 3 ),
+            None => call!($($arg), *)
+        }
+    }};
+    ( call!($($arg:ident),* ), $v:ident, 3 ) => {{
+        let next = $v.next();
+        match next {
+            Some(v) => _recurse_vector!( call!($($arg), *, next), $v, 4 ),
+            None => call!($($arg), *)
+        }
+    }};
+    ( call!($($arg:ident),* ), $v:ident, 4 ) => {{
+        let next = $v.next();
+        match next {
+            Some(v) => (),//_recurse_vector!( call!($($arg), *, next), $v, 5),
+            None => call!($($arg), *)
         }
     }};
 }
 
 #[macro_export]
 macro_rules! call {
+    ( $f:ident, () ) => {$f()};
+    ( $f:ident, ($( $arg:expr ),*) ) => {$f($($arg),*)};
+    ( $f:ident, $( $arg:expr ),* ) => {$f($($arg),*)};
+}
+
+#[macro_export]
+macro_rules! vcall {
     ( $f:ident, $args:ident ) => {{
         if args.len() == 0 {
             call!($f, ())
         } else {
-            _recurse_vector!(call!($f), args, 0)
+            let it = args.into_iter();
+            match it.next() {
+                Some(v) => _recurse_vector!(call!($f, v), it, 0),
+                None => $f(),
+            }
         }
     }};
-    ( $f:ident, ($( $arg:expr ),*) ) => {$f($($arg),*)};
-    ( $f:ident, $( $arg:expr ),* ) => {$f($($arg),*)};
-    ( $f:ident, () ) => {$f()};
 }
 
 
@@ -230,6 +265,6 @@ mod tests {
             true
         }
         let v = vec!["let's", "go", "beach", "to the"];
-        assert!(call!(lgbt, v));
+        assert!(vcall!(lgbt, v));
     }
 }
