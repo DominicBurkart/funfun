@@ -46,11 +46,14 @@ macro_rules! spawn_fn {
 }
 
 macro_rules! _recurse_vector {
-    ( call!($($arg:ident),* ), $iter:ident ) => {{
-        let next = iter.next();
-        match next {
-            Some(v) => { _recurse_vector!( call!($($arg), *, v), $iter) },
-            None => { call!($($arg), *) },
+    ( call!($($arg:ident),* ), $v:ident, $i:expr ) => {{
+        assert!($v.len() < 20 );
+        if $i < $v.len() {
+            let next = $v.get($i).unwrap();
+            let nexti = $i + 1;
+            _recurse_vector!( call!($($arg), *, next), $v, nexti)
+        } else {
+            call!($($arg), *)
         }
     }};
 }
@@ -58,15 +61,10 @@ macro_rules! _recurse_vector {
 #[macro_export]
 macro_rules! call {
     ( $f:ident, $args:ident ) => {{
-        let iter = args.into_iter();
-        let head = iter.next();
-        match head {
-            Some(v) => {
-                _recurse_vector!(call!($f, v ), iter)
-            },
-            None => {
-                call!($f, ())
-            }
+        if args.len() == 0 {
+            call!($f, ())
+        } else {
+            _recurse_vector!(call!($f), args, 0)
         }
     }};
     ( $f:ident, ($( $arg:expr ),*) ) => {$f($($arg),*)};
