@@ -45,61 +45,6 @@ macro_rules! spawn_fn {
     ( $f:expr, $( $arg:expr ),* ) => { ::std::thread::spawn(move || {$f( $($arg),* )}) };
 }
 
-macro_rules! _recurse_iter {
-    ( ($f:ident), $v:ident, 0 ) => {{
-        let next = $v.next();
-        match next {
-            Some(val) => _recurse_iter!( ($f, val), $v, 1 ),
-            None => _recurse_iter!( ($f), $v, 1 )
-        }
-    }};
-    ( ($($arg:ident),* ), $v:ident, 1 ) => {{
-        let next = $v.next();
-        match next {
-            Some(val) => _recurse_iter!( ($($arg),*, val), $v, 2 ),
-            None => _recurse_iter!( ($($arg),*), $v, 2 )
-        }
-    }};
-    ( ($($arg:ident),* ), $v:ident, 2 ) => {{
-        let next = $v.next();
-        match next {
-            Some(val) => _recurse_iter!( ( $($arg),*, val), $v, 3 ),
-            None => _recurse_iter!( ( $($arg),*), $v, 3 )
-        }
-    }};
-    ( ($($arg:ident),* ), $v:ident, 3 ) => {{
-        let next = $v.next();
-        match next {
-            Some(val) => _recurse_iter!( ( $($arg),*, val), $v, 4 ),
-            None => _recurse_iter!( ( $($arg),*), $v, 4 )
-        }
-    }};
-    ( ($($arg:ident),* ), $v:ident, 4 ) => {{
-        let next = $v.next();
-        match next {
-            Some(val) => _recurse_iter!( ( $($arg),*, val), $v, 5 ),
-            None => _recurse_iter!( ( $($arg),*), $v, 5 )
-        }
-    }};
-    ( ($($arg:ident),* ), $v:ident, 5 ) => {{
-        let next = $v.next();
-        match next {
-            Some(val) => _recurse_iter!( ( $($arg),*, val), $v, 6 ),
-            None => _recurse_iter!( ( $($arg),*), $v, 6 )
-        }
-    }};
-    ( ($($arg:ident),* ), $v:ident, 6 ) => {{
-        let next = $v.next();
-        match next {
-            Some(val) => _recurse_iter!( ( $($arg),*, val), $v, 7 ),
-            None => _recurse_iter!( ( $($arg),*), $v, 7 )
-        }
-    }};
-    ( ($f:ident, $($arg:ident),* ), $v:ident, 7 ) => {{
-        $f($($arg), *)
-    }};
-}
-
 #[macro_export]
 macro_rules! call {
     ( $f:ident, ($( $arg:expr ),*) ) => {$f($($arg),*)};
@@ -109,11 +54,15 @@ macro_rules! call {
 #[macro_export]
 macro_rules! vcall {
     ( $f:ident, $args:ident ) => {{
-        if $args.len() == 0 {
-            call!($f, ())
-        } else {
-            let it = $args.into_iter();
-            _recurse_iter!(($f), it, 0)
+        let l = args.len();
+        let it = args.into_iter();
+        match l {
+            0 => $f(),
+            1 => $f(it.next().unwrap()),
+            2 => $f(it.next().unwrap(), it.next().unwrap()),
+            3 => $f(it.next().unwrap(), it.next().unwrap(), it.next().unwrap()),
+            4 => $f(it.next().unwrap(), it.next().unwrap(), it.next().unwrap(), it.next().unwrap()),
+            _ => unimplemented!()
         }
     }};
 }
