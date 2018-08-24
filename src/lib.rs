@@ -1,5 +1,3 @@
-#![recursion_limit="512"]
-
 #[macro_use(c)]
 extern crate cute;
 
@@ -48,57 +46,57 @@ macro_rules! spawn_fn {
 }
 
 macro_rules! _recurse_iter {
-    ( ($($arg:ident),* ), $v:ident, 0 ) => {{
+    ( ($f:ident), $v:ident, 0 ) => {{
         let next = $v.next();
         match next {
-            Some(val) => _recurse_iter!( ($($arg), *, val), $v, 1 ),
-            None => _recurse_iter!( ($($arg), *), $v, 1 )
+            Some(val) => _recurse_iter!( ($f, val), $v, 1 ),
+            None => _recurse_iter!( ($f), $v, 1 )
         }
     }};
     ( ($($arg:ident),* ), $v:ident, 1 ) => {{
         let next = $v.next();
         match next {
-            Some(val) => _recurse_iter!( ($($arg), *, val), $v, 2 ),
-            None => _recurse_iter!( ($($arg), *), $v, 2 )
+            Some(val) => _recurse_iter!( ($($arg),*, val), $v, 2 ),
+            None => _recurse_iter!( ($($arg),*), $v, 2 )
         }
     }};
     ( ($($arg:ident),* ), $v:ident, 2 ) => {{
         let next = $v.next();
         match next {
-            Some(val) => _recurse_iter!( ($($arg), *, val), $v, 3 ),
-            None => _recurse_iter!( ($($arg), *), $v, 3 )
+            Some(val) => _recurse_iter!( ( $($arg),*, val), $v, 3 ),
+            None => _recurse_iter!( ( $($arg),*), $v, 3 )
         }
     }};
     ( ($($arg:ident),* ), $v:ident, 3 ) => {{
         let next = $v.next();
         match next {
-            Some(val) => _recurse_iter!( ($($arg), *, val), $v, 4 ),
-            None => _recurse_iter!( ($($arg), *), $v, 4 )
+            Some(val) => _recurse_iter!( ( $($arg),*, val), $v, 4 ),
+            None => _recurse_iter!( ( $($arg),*), $v, 4 )
         }
     }};
     ( ($($arg:ident),* ), $v:ident, 4 ) => {{
         let next = $v.next();
         match next {
-            Some(val) => _recurse_iter!( ($($arg), *, val), $v, 5 ),
-            None => _recurse_iter!( ($($arg), *), $v, 5 )
+            Some(val) => _recurse_iter!( ( $($arg),*, val), $v, 5 ),
+            None => _recurse_iter!( ( $($arg),*), $v, 5 )
         }
     }};
     ( ($($arg:ident),* ), $v:ident, 5 ) => {{
         let next = $v.next();
         match next {
-            Some(val) => _recurse_iter!( ($($arg), *, val), $v, 6 ),
-            None => _recurse_iter!( ($($arg), *), $v, 6 )
+            Some(val) => _recurse_iter!( ( $($arg),*, val), $v, 6 ),
+            None => _recurse_iter!( ( $($arg),*), $v, 6 )
         }
     }};
     ( ($($arg:ident),* ), $v:ident, 6 ) => {{
         let next = $v.next();
         match next {
-            Some(val) => _recurse_iter!( ($($arg), *, val), $v, 7 ),
-            None => _recurse_iter!( ($($arg), *), $v, 7 )
+            Some(val) => _recurse_iter!( ( $($arg),*, val), $v, 7 ),
+            None => _recurse_iter!( ( $($arg),*), $v, 7 )
         }
     }};
-    ( ($($arg:ident),* ), $v:ident, 7 ) => {{
-        call!($($arg), *)
+    ( ($f:ident, $($arg:ident),* ), $v:ident, 7 ) => {{
+        $f($($arg), *)
     }};
 }
 
@@ -115,7 +113,7 @@ macro_rules! vcall {
             call!($f, ())
         } else {
             let it = $args.into_iter();
-            _recurse_iter!((), it, 0)
+            _recurse_iter!(($f), it, 0)
         }
     }};
 }
