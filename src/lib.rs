@@ -1,5 +1,9 @@
+#![recursion_limit="512"]
+
 #[macro_use(c)]
 extern crate cute;
+#[macro_use]
+extern crate tt_call;
 
 use std::sync::Arc;
 //use std::fmt;
@@ -51,21 +55,186 @@ macro_rules! call {
     ( $f:ident, $( $arg:expr ),* ) => {$f($($arg),*)};
 }
 
+macro_rules! match_ItNext {
+    {
+        $caller:tt
+        input = [{ it.next().unwrap() }]
+    } => {
+        tt_return! {
+            $caller
+            is = [{ true }]
+        }
+    };
+    {
+        $caller:tt
+        input = [{ $other:tt }]
+    } => {
+        tt_return! {
+            $caller
+            is = [{ false }]
+        }
+    };
+}
+
+macro_rules! dup_ItNext {
+    {
+        $caller:tt
+        input = [{ $n:ident }]
+    } => {
+        if n == 0 {
+            tt_return! {
+                $caller
+                is = [{ }]
+            }
+        }; else if n == 1 {
+            tt_return! {
+                $caller
+                is = [{ it.next().unwrap() }]
+            }
+        } else {
+            let n2 = n - 1;
+            tt_return! {
+                $caller
+                is = [{ it.next().unwrap(),
+                    tt_call! {
+                        macro = [{ dup_ItNext }]
+                        input = [{ n2 }]
+                    }
+                 }]
+            }
+        }
+    }
+}
+
+macro_rules! match_FnB {
+    {
+        $caller:tt
+        input = [{ Fn(B) }]
+    } => {
+        tt_return! {
+            $caller
+            is = [{ true }]
+        }
+    };
+    {
+        $caller:tt
+        input = [{ $other:tt }]
+    } => {
+        tt_return! {
+            $caller
+            is = [{ false }]
+        }
+    };
+}
+
+macro_rules! dup_FnB {
+    {
+        $caller:tt
+        input = [{ $n:ident }]
+    } => {
+        tt_return! {
+            $caller
+            is = [{ Fn(
+                tt_call! {
+                    macro = [{ dup_FnB }]
+                    input = [{ @loop n }]
+                }
+            )}]
+        }
+    };
+    {
+        $caller:tt
+        input = [{ @loop $n:ident }]
+    } => {
+        if n == 0 {
+            tt_return! {
+                $caller
+                is = [{ }]
+            }
+        }; else if n == 1 {
+            tt_return! {
+                $caller
+                is = [{ B }]
+            }
+        } else {
+            let n2 = n - 1;
+            tt_return! {
+                $caller
+                is = [{
+                    B, tt_call! {
+                        macro = [{ dup_FnB }]
+                        input = [{ @loop n2 }]
+                    }
+                }]
+            }
+        }
+    }
+}
+
+//fn call<A, B, C>(f: A, args:Vec<B>) -> C where A: Fn(B) -> C {
+//    let mut it = args.into_iter();
+//    f(it.next().unwrap())
+//}
+
+macro_rules! rep_FnB {
+    {
+        $caller:tt
+        input = [{ $arity:ident }]
+    } => {
+        tt_return! {
+            $caller
+            is = [{tt_call! {
+                    macro = [{ tt_replace }]
+                    condition = [{ match_FnB }]
+                    replace_with = [{ rep_FnB!($arity) }]
+                    input = [{
+                        fn call<A, B, C>(f: A, args:Vec<B>) -> C where A: Fn(B) -> C {
+                            let mut it = args.into_iter();
+                            f(it.next().unwrap())
+                        }
+                    }]
+            }}]
+        }
+    };
+}
+
 #[macro_export]
 macro_rules! vcall {
-    ( $f:ident, $args:ident ) => {{
-        let l = args.len();
-        let it = args.into_iter();
-        match l {
-            0 => $f(),
-            1 => $f(it.next().unwrap()),
-            2 => $f(it.next().unwrap(), it.next().unwrap()),
-            3 => $f(it.next().unwrap(), it.next().unwrap(), it.next().unwrap()),
-            4 => $f(it.next().unwrap(), it.next().unwrap(), it.next().unwrap(), it.next().unwrap()),
-            _ => unimplemented!()
-        }
-    }};
+    ($function:expr, $args:expr) => {{
+        let arity = $args.len();
+
+        tt_call! {
+            macro = [{ tt_replace }]
+            condition = [{ match_ItNext }]
+            replace_with = [{ rep_ItNext!(arity) }]
+            input = [{
+                tt_call! {
+                    macro = [{ rep_FnB }]
+                    input = [{ arity }]
+                }
+            }]
+        };
+
+        call($function, $args)
+    }}
 }
+
+
+
+//fn vcall<A, B, C>(f: A, args:Vec<B>) -> C where A: Fn(B, B, B, B) -> C { // number of Bs == 4
+//    let arity = args.len();
+//    let mut it = args.into_iter();
+//    unpack!(f, it.next().unwrap(), arity)
+//}
+
+//fn vcall<A, B, C>(f: A, args:Vec<B>) -> C where A: Fn(B, B, B, B) -> C {
+//    let l = args.len();
+//    let mut it = args.into_iter();
+//    match l {
+//        4 => f(it.next().unwrap(), it.next().unwrap(), it.next().unwrap(), it.next().unwrap()),
+//        _ => unimplemented!()
+//    }
+//}
 
 
 /// Box<T> aliased for clarity (and later trait implementation) when boxing structures that
@@ -135,7 +304,6 @@ mod tests {
             |_: &str| {"and again".to_string()}
         );
     }
-
 
     #[test]
     fn in_struct_arc_fn() {
@@ -221,7 +389,7 @@ mod tests {
     #[test]
     fn test_vec_call() {
         fn lgbt(l: &str, g: &str, b: &str, t: &str) -> bool {
-            println!("LGBT stands for: {} {} {} {}", l, g, b, t);
+            println!("Vector says LGBT stands for: {} {} {} {}", l, g, b, t);
             true
         }
         let v = vec!["let's", "go", "beach", "to the"];
