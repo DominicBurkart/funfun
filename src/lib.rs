@@ -1,4 +1,4 @@
-#![recursion_limit="512"]
+#![recursion_limit="1024"]
 
 #[macro_use(c)]
 extern crate cute;
@@ -69,6 +69,7 @@ macro_rules! match_ItNext {
         $caller:tt
         input = [{ $other:tt }]
     } => {
+        println!("not it.next().unwrap(): {:?}", $other);
         tt_return! {
             $caller
             is = [{ false }]
@@ -109,7 +110,7 @@ macro_rules! dup_ItNext {
 macro_rules! match_FnB {
     {
         $caller:tt
-        input = [{ Fn(B) }]
+        input = [{ __B__ }]
     } => {
         tt_return! {
             $caller
@@ -120,6 +121,7 @@ macro_rules! match_FnB {
         $caller:tt
         input = [{ $other:tt }]
     } => {
+        println!("not FnB: {:?}", $other);
         tt_return! {
             $caller
             is = [{ false }]
@@ -127,24 +129,63 @@ macro_rules! match_FnB {
     };
 }
 
-macro_rules! dup_FnB {
+macro_rules! dup {
     {
         $caller:tt
-        input = [{ $n:ident }]
+        input = [{ no-commas, $n:ident, $($val:tt)* }]
     } => {
-        tt_return! {
-            $caller
-            is = [{ Fn(
-                tt_call! {
-                    macro = [{ dup_FnB }]
-                    input = [{ @loop n }]
-                }
-            )}]
+        if n == 0 {
+            tt_return! {
+                $caller
+                is = [{}]
+            }
+        } else if n == 1 {
+            tt_return! {
+                $caller
+                is = [{ $( $val )*  }]
+            }
+        } else if n > 1 {
+            let n2 = $n - 1
+            tt_return! {
+                $caller
+                is = [{ $( $val )* tt_call!(
+                    macro = [{ dup }]
+                    input = [{ n2 }]
+                ) }]
+            }
         }
     };
     {
         $caller:tt
-        input = [{ @loop $n:ident }]
+        input = [{ $n:ident, $($val:tt)* }]
+    } => {
+        if n == 0 {
+            tt_return! {
+                $caller
+                is = [{}]
+            }
+        } else if n == 1 {
+            tt_return! {
+                $caller
+                is = [{ $( $val )*  }]
+            }
+        } else if n > 1 {
+            let n2 = $n - 1
+            tt_return! {
+                $caller
+                is = [{ $( $val ) *, tt_call!(
+                    macro = [{ dup }]
+                    input = [{ n2 }]
+                ) }]
+            }
+        }
+    }
+}
+
+macro_rules! dup_FnB {
+    {
+        $caller:tt
+        input = [{ $n:ident }]
     } => {
         if n == 0 {
             tt_return! {
@@ -163,7 +204,7 @@ macro_rules! dup_FnB {
                 is = [{
                     B, tt_call! {
                         macro = [{ dup_FnB }]
-                        input = [{ @loop n2 }]
+                        input = [{ n2 }]
                     }
                 }]
             }
@@ -186,12 +227,16 @@ macro_rules! rep_FnB {
             is = [{tt_call! {
                     macro = [{ tt_replace }]
                     condition = [{ match_FnB }]
-                    replace_with = [{ rep_FnB!($arity) }]
+                    replace_with = [{ dup_FnB!($arity) }]
                     input = [{
-                        fn call<A, B, C>(f: A, args:Vec<B>) -> C where A: Fn(B) -> C {
+                        fn call<A, B, C>(f: A, args:Vec<B>) -> C where A: Fn( __B__ ) -> C {
                             let mut it = args.into_iter();
-                            f(it.next().unwrap())
+                            f( __it__next__ )
                         }
+//                        fn call<A, B, C>(f: A, args:Vec<B>) -> C where A: Fn(B, B, B, B) -> C {
+//                            let mut it = args.into_iter();
+//                            f(it.next().unwrap(), it.next().unwrap(), it.next().unwrap(), it.next().unwrap())
+//                        }
                     }]
             }}]
         }
@@ -203,12 +248,13 @@ macro_rules! vcall {
     ($function:expr, $args:expr) => {{
         let arity = $args.len();
 
+        // generates the appropriate call function
         tt_call! {
             macro = [{ tt_replace }]
             condition = [{ match_ItNext }]
             replace_with = [{ rep_ItNext!(arity) }]
             input = [{
-                tt_call! {
+                tt_call!{
                     macro = [{ rep_FnB }]
                     input = [{ arity }]
                 }
