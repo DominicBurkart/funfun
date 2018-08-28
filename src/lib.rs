@@ -55,226 +55,53 @@ macro_rules! call {
     ( $f:ident, $( $arg:expr ),* ) => {$f($($arg),*)};
 }
 
-macro_rules! match_ItNext {
+macro_rules! tt_fn_wrapper {
     {
         $caller:tt
-        input = [{ it.next().unwrap() }]
+        input = [{ $f:ident, ($( $arg:expr ),*) }]
     } => {
         tt_return! {
             $caller
-            is = [{ true }]
+            is = [{ $f($( $arg ),* )}]
+            // is = [{ call!($f, ($( $arg ),* ))}]
         }
     };
     {
         $caller:tt
-        input = [{ $other:tt }]
+        input = [{ $f:ident, $( $arg:expr ),*  }]
     } => {
-        println!("not it.next().unwrap(): {:?}", $other);
         tt_return! {
             $caller
-            is = [{ false }]
-        }
-    };
-}
-
-macro_rules! dup_ItNext {
-    {
-        $caller:tt
-        input = [{ $n:ident }]
-    } => {
-        if n == 0 {
-            tt_return! {
-                $caller
-                is = [{ }]
-            }
-        }; else if n == 1 {
-            tt_return! {
-                $caller
-                is = [{ it.next().unwrap() }]
-            }
-        } else {
-            let n2 = n - 1;
-            tt_return! {
-                $caller
-                is = [{ it.next().unwrap(),
-                    tt_call! {
-                        macro = [{ dup_ItNext }]
-                        input = [{ n2 }]
-                    }
-                 }]
-            }
+            is = [{ $f($($arg),*) }]
+            // is = [{ call!($f,$( $arg ),* ) }]
         }
     }
 }
 
-macro_rules! match_FnB {
+macro_rules! dup_next {
     {
         $caller:tt
-        input = [{ Fn( __B__ ) -> C }]
+        input = [{ $arity:ident, $f:ident, $rep:expr }]
     } => {
         tt_return! {
             $caller
-            is = [{ true }]
-        }
-    };
-    {
-        $caller:tt
-        input = [{ $other:tt }]
-    } => {
-        // println!("not FnB: {:?}", $other);
-        tt_return! {
-            $caller
-            is = [{ false }]
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! dup {
-    {
-        $caller:tt
-        input = [{ no-commas, $n:ident, $($val:tt)* }]
-    } => {
-        if n == 0 {
-            tt_return! {
-                $caller
-                is = [{}]
-            }
-        } else if n == 1 {
-            tt_return! {
-                $caller
-                is = [{ $( $val )*  }]
-            }
-        } else if n > 1 {
-            let n2 = $n - 1
-            tt_return! {
-                $caller
-                is = [{ $( $val )* tt_call!(
-                    macro = [{ dup }]
-                    input = [{ n2 }]
-                ) }]
-            }
-        }
-    };
-    {
-        $caller:tt
-        input = [{ $n:ident, $($val:tt)* }]
-    } => {
-        if n == 0 {
-            tt_return! {
-                $caller
-                is = [{}]
-            }
-        } else if n == 1 {
-            tt_return! {
-                $caller
-                is = [{ $( $val )*  }]
-            }
-        } else if n > 1 {
-            let n2 = $n - 1
-            tt_return! {
-                $caller
-                is = [{ $( $val )*, tt_call!(
-                    macro = [{ dup }]
-                    input = [{ n2 }]
-                ) }]
-            }
+            is = [{ $f, $rep, $rep, $rep, $rep}]
         }
     }
-}
-
-macro_rules! dup_FnB {
-    {
-        $caller:tt
-        input = [{ $n:ident }]
-    } => {
-        tt_return! {
-            $caller
-            is = [{ Fn (B, B, B, B) -> C }]
-        }
-//        if n == 0 { // this is
-//            tt_return! {
-//                $caller
-//                is = [{ }]
-//            }
-//        }; else if n == 1 {
-//            tt_return! {
-//                $caller
-//                is = [{ B }]
-//            }
-//        } else {
-//            let n2 = n - 1;
-//            tt_return! {
-//                $caller
-//                is = [{
-//                    B, tt_call! {
-//                        macro = [{ dup_FnB }]
-//                        input = [{ n2 }]
-//                    }
-//                }]
-//            }
-//        }
-    }
-}
-
-//fn call<A, B, C>(f: A, args:Vec<B>) -> C where A: Fn(B) -> C {
-//    let mut it = args.into_iter();
-//    f(it.next().unwrap())
-//}
-
-//                        fn call<A, B, C>(f: A, args:Vec<B>) -> C where A: Fn(B, B, B, B) -> C {
-//                            let mut it = args.into_iter();
-//                            f(it.next().unwrap(), it.next().unwrap(), it.next().unwrap(), it.next().unwrap())
-//                        }
-
-macro_rules! rep_FnB {
-    {
-        $caller:tt
-        input = [{ $arity:ident }]
-    } => {
-        tt_call! {
-            macro = [{ tt_replace }]
-            condition = [{ match_FnB }]
-            replace_with = [{
-                tt_call! {
-                    macro = [{ dup_FnB }]
-                    input = [{ $arity }]
-                }
-            }]
-            input = [{
-                fn call<A, B, C>(f: A, args:Vec<B>) -> C where A: Fn( __B__ ) -> C {
-                    let mut it = args.into_iter();
-                    f( __it__next__ )
-                }
-            }]
-        }
-    };
 }
 
 #[macro_export]
 macro_rules! vcall {
     ($function:expr, $args:expr) => {{
+        let f = $function;
         let arity = $args.len();
+        let mut it = $args.into_iter();
 
         tt_call! {
-            macro = [{ rep_FnB }]
-            input = [{ arity }]
-            ~~> tt_call! {
-                macro = [{ tt_replace }]
-                condition = [{ match_ItNext }]
-                replace_with = [{
-                    tt_call! {
-                        macro = [{ dup_ItNext }]
-                        input = [{ arity }]
-                    }
-                }]
-            }
-        };
-
-        // generates the appropriate call function
-
-
-        call($function, $args)
+            macro = [{ dup_next }]
+            input = [{ arity, f, it.next().unwrap() }]
+            ~~> tt_fn_wrapper
+        }
     }}
 }
 
@@ -452,6 +279,6 @@ mod tests {
             true
         }
         let v = vec!["let's", "go", "beach", "to the"];
-        assert!(vcall!(lgbt, v));
+        assert!{vcall!{lgbt, v}};
     }
 }
