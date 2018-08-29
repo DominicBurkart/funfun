@@ -56,16 +56,16 @@ macro_rules! call {
 }
 
 macro_rules! tt_fn_wrapper {
-    {
-        $caller:tt
-        input = [{ $f:ident, ($( $arg:expr ),*) }]
-    } => {
-        tt_return! {
-            $caller
-            is = [{ $f($( $arg ),* )}]
-            // is = [{ call!($f, ($( $arg ),* ))}]
-        }
-    };
+//    {
+//        $caller:tt
+//        input = [{ $f:ident, ($( $arg:expr ),*) }]
+//    } => {
+//        tt_return! {
+//            $caller
+//            is = [{ $f($( $arg ),* )}]
+//            // is = [{ call!($f, ($( $arg ),* ))}]
+//        }
+//    };
     {
         $caller:tt
         input = [{ $f:ident, $( $arg:expr ),*  }]
@@ -85,7 +85,12 @@ macro_rules! dup_next {
     } => {
         tt_return! {
             $caller
-            is = [{ $f, $rep, $rep, $rep, $rep}]
+            is = [{
+            tt_call! {
+                macro = [{ tt_fn_wrapper }]
+                input = [{ $f, $rep, $rep, $rep, $rep }]
+            }
+            }]
         }
     }
 }
@@ -100,7 +105,6 @@ macro_rules! vcall {
         tt_call! {
             macro = [{ dup_next }]
             input = [{ arity, f, it.next().unwrap() }]
-            ~~> tt_fn_wrapper
         }
     }}
 }
