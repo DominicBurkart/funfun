@@ -3,14 +3,17 @@
 #[macro_use(c)]
 extern crate cute;
 #[macro_use]
-extern crate tt_call;
-extern crate proc_macro2;
-extern crate syn;
+//extern crate tt_call;
+//extern crate proc_macro2;
+//extern crate syn;
+//#[macro_use]
+//extern crate quote;
 
 use std::sync::Arc;
 //use std::fmt;
-
-use proc_macro2::TokenStream;
+//
+//use syn::DeriveInput;
+//use proc_macro2::TokenStream;
 
 /// Boxes (heap-allocates) the given value and returns an Rc to the object.
 #[macro_export]
@@ -58,99 +61,6 @@ macro_rules! call {
     ( $f:ident, ($( $arg:expr ),*) ) => {$f($($arg),*)};
     ( $f:ident, $( $arg:expr ),* ) => {$f($($arg),*)};
 }
-
-//macro_rules! tt_fn_wrapper {
-////    {
-////        $caller:tt
-////        input = [{ $f:ident, ($( $arg:expr ),*) }]
-////    } => {
-////        tt_return! {
-////            $caller
-////            is = [{ $f($( $arg ),* )}]
-////            // is = [{ call!($f, ($( $arg ),* ))}]
-////        }
-////    };
-//    {
-//        $caller:tt
-//        input = [{ $tokenstream:ident  }]
-//    } => {
-//        tt_return! {
-//            $caller
-//            is = [{ $f($($arg),*) }]
-//            // is = [{ call!($f,$( $arg ),* ) }]
-//        }
-//    }
-//}
-
-//macro_rules! test {
-//    (
-//        $caller:tt
-//        input = [{ $arity:ident, $f:ident, $rep:expr }]
-//    ) => {
-//        tt_return! {
-//            $caller
-//            is = [{
-//                let mut string = String::new();
-//                string.push_str("$f, $rep, $rep, $rep, $rep");
-//                string.parse::<TokenStream>().unwrap()
-//            }]
-//        }
-//    };
-//}
-
-macro_rules! func_call {
-    {
-        $caller:tt
-        input = [{ $arity:ident, $f:ident, $rep:expr }]
-    } => {
-        tt_return! {
-            $caller
-            is = [{
-                let string = "$f, (".to_string();
-                for i in 0..$arity {
-                    string.push_str("$rep");
-                    if i != $arity - 1 {
-                        string.push_str(", ");
-                    }
-                }
-                string.push_str(")");
-                let stream = string.parse::<TokenStream>().unwrap();
-                syn::parse2(stream).unwrap().into()
-            }]
-        }
-    }
-}
-
-#[macro_export]
-macro_rules! vcall {
-    ($function:expr, $args:expr) => {{
-        let f = $function;
-        let arity = $args.len();
-        let mut it = $args.into_iter();
-
-        tt_call! {
-            macro = [{ func_call }]
-            input = [{ arity, f, it.next().unwrap() }]
-        }
-    }}
-}
-
-
-
-//fn vcall<A, B, C>(f: A, args:Vec<B>) -> C where A: Fn(B, B, B, B) -> C { // number of Bs == 4
-//    let arity = args.len();
-//    let mut it = args.into_iter();
-//    unpack!(f, it.next().unwrap(), arity)
-//}
-
-//fn vcall<A, B, C>(f: A, args:Vec<B>) -> C where A: Fn(B, B, B, B) -> C {
-//    let l = args.len();
-//    let mut it = args.into_iter();
-//    match l {
-//        4 => f(it.next().unwrap(), it.next().unwrap(), it.next().unwrap(), it.next().unwrap()),
-//        _ => unimplemented!()
-//    }
-//}
 
 
 /// Box<T> aliased for clarity (and later trait implementation) when boxing structures that
@@ -300,15 +210,5 @@ mod tests {
         }
         let n = "neato";
         call!(p, n, "hello!")
-    }
-
-    #[test]
-    fn test_vec_call() {
-        fn lgbt(l: &str, g: &str, b: &str, t: &str) -> bool {
-            println!("Vector says LGBT stands for: {} {} {} {}", l, g, b, t);
-            true
-        }
-        let v = vec!["let's", "go", "beach", "to the"];
-        assert!{vcall!{lgbt, v}};
     }
 }
