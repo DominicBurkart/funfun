@@ -4,9 +4,13 @@
 extern crate cute;
 #[macro_use]
 extern crate tt_call;
+extern crate proc_macro2;
+extern crate syn;
 
 use std::sync::Arc;
 //use std::fmt;
+
+use proc_macro2::TokenStream;
 
 /// Boxes (heap-allocates) the given value and returns an Rc to the object.
 #[macro_export]
@@ -55,30 +59,46 @@ macro_rules! call {
     ( $f:ident, $( $arg:expr ),* ) => {$f($($arg),*)};
 }
 
-macro_rules! tt_fn_wrapper {
+//macro_rules! tt_fn_wrapper {
+////    {
+////        $caller:tt
+////        input = [{ $f:ident, ($( $arg:expr ),*) }]
+////    } => {
+////        tt_return! {
+////            $caller
+////            is = [{ $f($( $arg ),* )}]
+////            // is = [{ call!($f, ($( $arg ),* ))}]
+////        }
+////    };
 //    {
 //        $caller:tt
-//        input = [{ $f:ident, ($( $arg:expr ),*) }]
+//        input = [{ $tokenstream:ident  }]
 //    } => {
 //        tt_return! {
 //            $caller
-//            is = [{ $f($( $arg ),* )}]
-//            // is = [{ call!($f, ($( $arg ),* ))}]
+//            is = [{ $f($($arg),*) }]
+//            // is = [{ call!($f,$( $arg ),* ) }]
+//        }
+//    }
+//}
+
+//macro_rules! test {
+//    (
+//        $caller:tt
+//        input = [{ $arity:ident, $f:ident, $rep:expr }]
+//    ) => {
+//        tt_return! {
+//            $caller
+//            is = [{
+//                let mut string = String::new();
+//                string.push_str("$f, $rep, $rep, $rep, $rep");
+//                string.parse::<TokenStream>().unwrap()
+//            }]
 //        }
 //    };
-    {
-        $caller:tt
-        input = [{ $f:ident, $( $arg:expr ),*  }]
-    } => {
-        tt_return! {
-            $caller
-            is = [{ $f($($arg),*) }]
-            // is = [{ call!($f,$( $arg ),* ) }]
-        }
-    }
-}
+//}
 
-macro_rules! dup_next {
+macro_rules! func_call {
     {
         $caller:tt
         input = [{ $arity:ident, $f:ident, $rep:expr }]
@@ -86,10 +106,16 @@ macro_rules! dup_next {
         tt_return! {
             $caller
             is = [{
-            tt_call! {
-                macro = [{ tt_fn_wrapper }]
-                input = [{ $f, $rep, $rep, $rep, $rep }]
-            }
+                let string = "$f, (".to_string();
+                for i in 0..$arity {
+                    string.push_str("$rep");
+                    if i != $arity - 1 {
+                        string.push_str(", ");
+                    }
+                }
+                string.push_str(")");
+                let stream = string.parse::<TokenStream>().unwrap();
+                syn::parse2(stream).unwrap().into()
             }]
         }
     }
@@ -103,7 +129,7 @@ macro_rules! vcall {
         let mut it = $args.into_iter();
 
         tt_call! {
-            macro = [{ dup_next }]
+            macro = [{ func_call }]
             input = [{ arity, f, it.next().unwrap() }]
         }
     }}
